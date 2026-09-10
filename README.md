@@ -26,8 +26,7 @@
   &nbsp;
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" width="38" alt="CSS3" />
   &nbsp;
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/c/c-original.svg" width="38" alt="C" />
-</p>
+  <img src="https://skillicons.dev/icons?i=python,java,r,html,css,c,mysql" /></p>
 
 `Python` `Java` `R` `HTML` `CSS` · Learning `C` & `SQL`
 
