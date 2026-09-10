@@ -6,7 +6,6 @@
 
 </div>
 
-Student developer interested in programming, data, and technology.
 
 ### Projects
 
