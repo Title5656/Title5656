@@ -31,6 +31,3 @@
 
 `Python` `Java` `R` `HTML` `CSS` · Learning `C` & `SQL`
 
-### Activity
-
-[![Title's GitHub activity graph](https://github-readme-activity-graph.vercel.app/graph?username=Title5656&theme=github-compact&hide_border=true)](https://github.com/Title5656)
