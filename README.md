@@ -6,8 +6,6 @@
 
 </div>
 
-Student developer interested in programming, data, and technology.
-
 ### Projects
 
 - ⚡ [WattWise](https://github.com/Title5656/WattWise) — Household energy usage simulator
