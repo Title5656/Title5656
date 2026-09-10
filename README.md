@@ -6,6 +6,7 @@
 
 </div>
 
+Student developer interested in programming, data, and technology.
 
 ### Projects
 
@@ -16,17 +17,13 @@
 ### Languages
 
 <p>
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" width="38" alt="Python" />
-  &nbsp;
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg" width="38" alt="Java" />
-  &nbsp;
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg" width="38" alt="R" />
-  &nbsp;
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" width="38" alt="HTML5" />
-  &nbsp;
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" width="38" alt="CSS3" />
-  &nbsp;
-  <img src="https://skillicons.dev/icons?i=python,java,r,html,css,c,mysql" /></p>
+  <img src="https://skillicons.dev/icons?i=python,java,r,html,css" alt="Languages" />
+</p>
 
-`Python` `Java` `R` `HTML` `CSS` · Learning `C` & `SQL`
+`Python` `Java` `R` `HTML` `CSS`
 
+Currently learning more about `C` and `SQL`.
+
+### GitHub
+
+<img src="https://github-readme-stats.vercel.app/api?username=Title5656&show_icons=true&hide_border=true&theme=github_dark_dimmed&rank_icon=github" alt="GitHub Stats" />
