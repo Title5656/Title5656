@@ -23,7 +23,3 @@ Student developer interested in programming, data, and technology.
 `Python` `Java` `R` `HTML` `CSS`
 
 Currently learning more about `C` and `SQL`.
-
-### GitHub
-
-<img src="https://github-readme-stats.vercel.app/api?username=Title5656&show_icons=true&hide_border=true&theme=github_dark_dimmed&rank_icon=github" alt="GitHub Stats" />
