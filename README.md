@@ -2,7 +2,7 @@
 
 # Hi, I'm Title 👋
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=17&duration=3000&pause=1000&color=58A6FF&center=true&vCenter=true&width=450&lines=Student+Developer;Programming+%E2%80%A2+Data+%E2%80%A2+Learning" alt="Typing introduction" />
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=17&duration=3000&pause=1000&color=58A6FF&center=true&vCenter=true&width=450&lines=Student+Developer;Programming+%E2%80%A2+Data+[...] 
 
 </div>
 
@@ -12,6 +12,7 @@
 - 🎮 [Mini Game Center](https://github.com/Title5656/minigame-center-web) — Collection of browser mini-games
 - 🤖 [Pat](https://github.com/Title5656/Krai-ah) — Minimal Discord voice activity logger
 - 🌱 [Study Garden](https://github.com/Title5656/study-garden) — Interactive Thai exam preparation site with flashcards and quizzes
+- 🍣 [Sushiro Count](https://github.com/Title5656/sushiro-count) — A simple web app to count Sushiro plates, calculate total costs, and track your dining budget.
 
 ### Languages
 
