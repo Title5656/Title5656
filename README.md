@@ -2,7 +2,6 @@
 
 # Hi, I'm Title 👋
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=17&duration=3000&pause=1000&color=58A6FF&center=true&vCenter=true&width=450&lines=Student+Developer;Programming+%E2%80%A2+Data+[...] 
 
 </div>
 
