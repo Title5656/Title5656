@@ -1,0 +1,105 @@
+name: Update 3D Contribution Skyline
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Commit authentic assets (default branch only); otherwise upload a preview'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 1 * * *' # 08:17 Bangkok; requires SKYLINE_ENABLE_UPDATES=true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: profile-skyline
+  cancel-in-progress: false
+
+jobs:
+  render:
+    if: github.repository == 'Title5656/Title5656' && (github.event_name != 'schedule' || vars.SKYLINE_ENABLE_UPDATES == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      publish: ${{ steps.mode.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: mode
+        name: Decide preview or publish
+        env:
+          PUBLISH: ${{ inputs.publish || github.event_name == 'schedule' }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$PUBLISH" = 'true' ] && [ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]; then
+            echo 'Publication is allowed only on the default branch.' >&2
+            exit 1
+          fi
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install renderer
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Check source and data logic
+        run: |
+          python -m unittest discover -s tests -v
+          node --test tests/skyline.test.cjs
+          node --check docs/skyline.js
+      - name: Fetch authentic GitHub data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USERNAME: Title5656
+        run: python scripts/update_contributions.py
+      - name: Render GIF from validated authentic data
+        run: python scripts/render_profile_gif.py
+      - name: Prepare Pages and review artifacts
+        run: |
+          cp contributions.json docs/contributions.json
+          mkdir -p pages-site
+          cp docs/index.html docs/skyline.css docs/skyline.js docs/contributions.json pages-site/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skyline-review
+          path: |
+            contribution-skyline.gif
+            contribution-skyline-3d.png
+            contribution-card.svg
+            contributions.json
+            pages-site/
+          retention-days: 14
+      - name: Commit only the five generated assets
+        if: steps.mode.outputs.publish == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add contribution-skyline.gif contribution-skyline-3d.png contribution-card.svg contributions.json docs/contributions.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: update live 3D contribution skyline'
+            git push
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.mode.outputs.publish == 'true' && vars.SKYLINE_ENABLE_PAGES == 'true'
+        with:
+          path: pages-site
+  deploy-pages:
+    needs: render
+    if: needs.render.outputs.publish == 'true' && vars.SKYLINE_ENABLE_PAGES == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
