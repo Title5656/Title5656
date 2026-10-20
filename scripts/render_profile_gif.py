@@ -21,22 +21,16 @@ from pathlib import Path
 from update_contributions import validate_payload
 
 ROOT = Path(__file__).resolve().parent.parent
+FRAME_SIZE = (980, 780)
 
 # The visible image has constant dimensions while the Canvas inside it
 # genuinely morphs between 2D and 3D with the same world-space cuboids.
 FIXED_CARD_CSS = """
 html, body { width: 100%; height:auto; background:var(--background,#fff); }
-.page { margin:0; width:980px; max-width:none; min-height:0; padding:0; }
-.card { width:980px; height:700px; padding:19px 20px 20px; box-shadow:none; }
-.inner { height:580px; position:relative; }
-.scene-shell { margin: 12px 16px 2px; }
-.stats { position:absolute; top:438px; left:0; right:0; z-index:2;
-         background:var(--background,#fff); }
-.footer { position:absolute; bottom:0; left:0; right:0; z-index:2;
-          background:var(--background,#fff); }
-.note, .toolbar, .legend, .page-heading { display:none; }
-.data-status { margin:0 0 10px; }
-.footer { justify-content:center; }
+.page { margin:0; width:980px; height:780px; max-width:none; min-height:0; padding:0;
+        display:flex; align-items:center; justify-content:center; }
+.card { width:980px; flex:none; }
+.preferences { display:none; }
 """
 
 
@@ -61,7 +55,7 @@ def frames_for_loop():
     return seq
 
 
-def render(*, demo=False, quality=128, light=False):
+def render(*, demo=False, quality=256, light=False):
     input_path = ROOT / ('preview/contributions-demo.json' if demo else 'contributions.json')
     if not input_path.exists():
         raise SystemExit(f'Missing {input_path}; run update_contributions.py first')
@@ -88,7 +82,7 @@ def render(*, demo=False, quality=128, light=False):
         elif shutil.which('chromium'):
             launch['executable_path'] = shutil.which('chromium')
         browser = pw.chromium.launch(**launch)
-        page = browser.new_page(viewport={'width':1024,'height':720}, device_scale_factor=1)
+        page = browser.new_page(viewport={'width':FRAME_SIZE[0],'height':FRAME_SIZE[1]}, device_scale_factor=1)
         page.set_content(load_html(), wait_until='load')
         # A renderer page has no HTTP dataset; inject validated days below.
         page.wait_for_function('window.__skyline')
@@ -96,6 +90,7 @@ def render(*, demo=False, quality=128, light=False):
           const g = window.__skyline;
           if(g.entranceObs)g.entranceObs.disconnect();
           g.setData(days, demo);
+          document.querySelectorAll('.toolbar button,.toolbar select').forEach(control=>control.disabled=false);
           document.documentElement.dataset.dataState='ready';
           document.getElementById('empty-state').hidden=true;
           document.getElementById('data-status').textContent=demo?'SAMPLE DATA · appearance preview only · not Title5656 activity':`@${username} · GitHub contribution snapshot · ${generatedAt.slice(0,10)} UTC`;
@@ -107,17 +102,19 @@ def render(*, demo=False, quality=128, light=False):
           g.viewTarget = g.t = 0;
           g.render(performance.now());
         }''', {'days': days, 'demo': demo, 'light': light, 'generatedAt': data['generatedAt'], 'username': data['username']})
-        locator = page.locator('.card')
+        locator = page.locator('.page')
         for idx, (t, ms) in enumerate(seq):
             page.evaluate('''t => {
               const g = window.__skyline;
               if(g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
-              g.lastTime=0; g.t=t; g.viewTarget=t; g.render(performance.now());
+              g.lastTime=0; g.t=t; g.viewTarget=t>=.5?1:0; g.setButtons();
+              g.viewTarget=t; g.render(performance.now());
+              document.getElementById('help').textContent='Click to explore · drag to orbit on the website';
             }''', t)
             # PNG bytes -> Pillow, no intermediate screenshots written to disk.
             png = locator.screenshot(type='png', animations='disabled', timeout=12000)
             im = Image.open(io.BytesIO(png)).convert('RGB')
-            if im.size != (980, 700):
+            if im.size != FRAME_SIZE:
                 raise RuntimeError(f'Unexpected frame size: {im.size}')
             ims.append(im)
             if t == 1.0:
@@ -131,6 +128,12 @@ def render(*, demo=False, quality=128, light=False):
     for i, im in enumerate(ims):
         swatches.paste(im.resize((490,155), Image.Resampling.BILINEAR), (0,i*155))
     master_palette = swatches.quantize(colors=quality, method=Image.Quantize.MEDIANCUT)
+    # Keep the exact UI colors so thin white/muted text survives GIF quantization.
+    palette = master_palette.getpalette()
+    ui_colors = ['#0a0a0a','#fafafa','#a3a3a3','#262626','#39d353','#ffffff','#737373','#171717']
+    for index,color in enumerate(ui_colors, start=quality-len(ui_colors)):
+        palette[index*3:index*3+3] = [int(color[pos:pos+2],16) for pos in (1,3,5)]
+    master_palette.putpalette(palette)
     converted = [im.quantize(palette=master_palette, dither=Image.Dither.NONE) for im in ims]
     durations = [d for _, d in seq]
     converted[0].save(outgif, save_all=True, append_images=converted[1:],
@@ -142,7 +145,7 @@ def render(*, demo=False, quality=128, light=False):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--demo', action='store_true', help='Use simulated sample, never publish as real')
-    p.add_argument('--quality', type=int, default=128, help='GIF palette colors (16..256)')
+    p.add_argument('--quality', type=int, default=256, help='GIF palette colors (16..256)')
     p.add_argument('--light', action='store_true', help='Render a light card instead of the default GitHub dark theme')
     a = p.parse_args()
     render(demo=a.demo, quality=max(16,min(256,a.quality)), light=a.light)

@@ -57,6 +57,18 @@ class DataTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.fetch(self.api(login='somebody-else'))
 
+    def test_calendar_includes_anonymized_private_counts_without_double_counting(self):
+        raw=self.api(total=312,count=312)
+        collection=raw['data']['user']['contributionsCollection']
+        collection['restrictedContributionsCount']=86
+        collection['hasAnyRestrictedContributions']=True
+        coverage={}
+        with patch.object(update.urllib.request,'urlopen',return_value=io.BytesIO(json.dumps(raw).encode())):
+            days=update.fetch_github('Title5656','test-token-not-real',coverage=coverage)
+        self.assertEqual(sum(day['count'] for day in days),312)
+        self.assertEqual(coverage['anonymizedPrivateContributions'],86)
+        self.assertTrue(coverage['includesAnonymizedPrivate'])
+
     def test_graphql_rejects_total_mismatch(self):
         with self.assertRaises(RuntimeError):
             self.fetch(self.api(total=99))

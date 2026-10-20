@@ -7,7 +7,7 @@ const SAMPLE_START = '2016-11-06';
 const SAMPLE_COUNTS = [0,5,0,1,2,5,9,1,19,24,19,31,32,33,4,24,8,3,2,31,0,0,11,15,23,0,9,0,2,4,10,2,1,0,0,0,8,2,5,0,2,0,0,0,2,0,4,2,0,0,2,0,0,0,0,0,4,9,0,0,9,2,5,4,7,1,4,3,0,2,0,2,4,2,3,3,0,1,0,1,4,0,0,0,3,2,3,2,1,0,0,0,3,2,7,4,4,0,2,4,1,2,0,0,0,0,0,1,4,0,7,22,0,0,4,3,3,0,1,0,2,3,3,3,0,0,0,0,3,0,2,0,0,2,0,0,0,0,0,1,1,8,0,7,19,4,0,0,11,5,3,24,3,6,3,6,9,1,2,15,0,0,2,12,11,4,9,4,32,6,1,17,31,9,3,3,8,8,7,2,3,1,1,21,1,7,10,4,1,0,12,3,2,8,3,4,2,0,8,7,0,3,0,0,15,3,8,4,0,0,0,4,6,0,4,0,0,0,0,2,4,0,11,13,0,3,4,0,0,7,13,3,0,8,3,15,8,9,4,1,7,3,8,3,4,0,20,22,4,19,9,2,15,31,8,4,5,2,9,15,15,54,5,13,24,1,4,6,3,0,4,22,5,2,1,27,32,5,1,4,1,6,12,0,12,5,2,3,13,14,10,0,2,3,0,3,7,1,1,4,0,0,0,2,3,2,1,5,3,0,0,1,0,2,0,3,0,0,0,0,2,0,0,0,4,0,2,8,0,0,0,2,0,2,7,0,1,3,4,0,3,3,0,5,0,0,0,9,0,0,1,4,3,1,0,1,0,1,9,3,0,0,18,0,0,0,1,4];
 const SAMPLE_LEVELS = '02011221344444142114002340201121100021101000101100100000120021112111010111110101100011111000112110111100000110240011101011110000101001000001120241003214111221130013312142134211222111141221103112111022010031210001201000011033011002310213221121211044142134211123341341121014211441111230321133301101211100011111100101010000100010120001012011101101000200111101012100300011';
 const PALETTES = {
-  github: {light:['#ebedf0','#c6e48b','#7bc96f','#239a3b','#196127'],dark:['#21262d','#0e4429','#006d32','#26a641','#39d353']},
+  github: {light:['#ebedf0','#c6e48b','#7bc96f','#239a3b','#196127'],dark:['#242424','#0e4429','#006d32','#26a641','#39d353']},
   halloween: {light:['#f0eded','#ffee4a','#ffc501','#fe9600','#03001c'],dark:['#25212a','#ffee4a','#ffc501','#fe9600','#c97200']},
   ocean: {light:['#e9f2f5','#b8ecfa','#72c5e6','#2591c3','#15567f'],dark:['#182b34','#194b67','#277da5','#31aed4','#7de1f6']},
   ember: {light:['#f1ebe9','#ffd0a1','#ff9c5b','#de5c3a','#822c37'],dark:['#2d2225','#783d3d','#ba4b3b','#eb8149','#ffc078']},
@@ -19,6 +19,7 @@ const DAY=86400000, clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const easeInOutCubic=t=>{t=clamp(t,0,1);return t<.5?4*t*t*t:1-(-2*t+2)**3/2;};
 const easeOutCubic=t=>1-(1-clamp(t,0,1))**3;
+const smoothstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const barHeight=(count,max,scale=1)=>count>0&&max>0?.4+Math.pow(count/max,.85)*7.2*scale:.2;
 const riseAt=(t,week,weeks,day)=>{
   const delay=(weeks>1?week/(weeks-1):0)*.36+(day/6)*.06;
@@ -130,7 +131,7 @@ class Skyline {
       const cell={...day,week:w,dow,index:i};this.cells.push(cell);this.cellsByDate.set(day.date,cell);
     });
     $('sample-tag').hidden=!isDemo;
-    $('card-title').textContent=`${fmtNum(this.stats.total)} contributions in the last year`;
+    $('card-title').innerHTML=`<strong>${fmtNum(this.stats.total)}</strong> contributions in the last year`;
     $('total').textContent=fmtNum(this.stats.total);
     $('period').textContent=`${fmtFull(this.stats.start)} – ${fmtFull(this.stats.end)}`;
     $('busiest').textContent=fmtNum(this.stats.busiest.count);
@@ -199,7 +200,7 @@ class Skyline {
       $(id).classList.toggle('active',this.viewTarget===val);$(id).setAttribute('aria-pressed',String(this.viewTarget===val));
     }
     this.canvas.classList.toggle('orbit',this.viewTarget===1);
-    $('help').textContent=this.viewTarget===1?'Drag to orbit · double-click to reset · arrow keys to explore':'Hover a day · arrow keys to explore';
+    $('help').textContent=this.viewTarget===1?'Drag to orbit · double-click to reset':'Hover a day for details · arrow keys to explore';
   }
   colors(){return PALETTES[this.currentPalette][this.dark?'dark':'light'];}
   drawLegend(){
@@ -217,18 +218,32 @@ class Skyline {
     return [x*Math.cos(yaw)-y*Math.sin(yaw),
       (x*Math.sin(yaw)+y*Math.cos(yaw))*Math.sin(elev)-z*Math.cos(elev)];
   }
+  sceneBounds(t,yaw,elev,full=false){
+    const eased=easeInOutCubic(t),half=lerp(.78,.9,eased)/2;
+    let minx=Infinity,maxx=-Infinity,miny=Infinity,maxy=-Infinity;
+    const include=(x,y,z)=>{
+      const [sx,sy]=this.projectRaw(x,y,z,yaw,elev);
+      minx=Math.min(minx,sx);maxx=Math.max(maxx,sx);miny=Math.min(miny,sy);maxy=Math.max(maxy,sy);
+    };
+    for(const cell of this.cells){
+      const z=barHeight(cell.count,this.stats.maxCount)*(full?eased:riseAt(t,cell.week,this.weeks,cell.dow));
+      for(const x of [cell.week-half,cell.week+half])for(const y of [cell.dow-half,cell.dow+half]){
+        include(x,y,0);include(x,y,z);
+      }
+    }
+    include(-.5,6.5+1.5*eased,0);include(this.weeks-.5,6.5+1.5*eased,0);
+    return {minx,maxx,miny,maxy};
+  }
   buildCamera(width,height,t){
     const eased=easeInOutCubic(t),yaw=eased*(Math.PI/4+this.yawOffset),elev=Math.PI/2+(34*Math.PI/180+this.elevOffset-Math.PI/2)*eased;
     // `elev` correctly moves 90° -> 34°, with user orbit offset only in 3D.
-    let minx=Infinity,maxx=-Infinity,miny=Infinity,maxy=-Infinity;
-    const worldZ=8*eased;
-    for(const x of [-.5,this.weeks-.5])for(const y of [-.5,6.5])for(const z of [0,worldZ]){
-      const [a,b]=this.projectRaw(x,y,z,yaw,elev);minx=Math.min(minx,a);maxx=Math.max(maxx,a);miny=Math.min(miny,b);maxy=Math.max(maxy,b);
-    }
-    const padX=width<540?10:37,top=35,bottom=22;
-    const scale=Math.min((width-padX*2)/(maxx-minx),(height-top-bottom)/(maxy-miny));
-    const ox=(width-(maxx-minx)*scale)/2-minx*scale;
-    const oy=top+(height-top-bottom-(maxy-miny)*scale)/2-miny*scale;
+    const {minx,maxx,miny,maxy}=this.sceneBounds(t,yaw,elev);
+    const pad=lerp(2,20,eased),gutter=width<520?0:32;
+    const left=pad+gutter*(1-eased),top=pad+20*(1-eased);
+    const availableWidth=width-left-pad,availableHeight=height-top-pad;
+    const scale=Math.min(availableWidth/(maxx-minx),availableHeight/(maxy-miny));
+    const ox=left+(availableWidth-(maxx-minx)*scale)/2-minx*scale;
+    const oy=top+(availableHeight-(maxy-miny)*scale)/2-miny*scale;
     return {yaw,elev,scale,ox,oy,t,eased,project:(x,y,z)=>{const [a,b]=this.projectRaw(x,y,z,yaw,elev);return [ox+a*scale,oy+b*scale];}};
   }
   drawQuad(points,color,stroke){
@@ -249,9 +264,18 @@ class Skyline {
       if(Math.abs(de)>.00004)this.elevOffset+=de*follow;else this.elevOffset=this.elevGoal;
     }
     const t=this.t,eff=easeInOutCubic(t);
-    const height=151+Math.round(265*eff);this.shell.style.height=height+'px';
-    const rect=this.canvas.getBoundingClientRect();const width=rect.width;
+    const width=this.shell.getBoundingClientRect().width;
     if(width<1||!this.cells.length)return;
+    const flat=this.sceneBounds(0,0,Math.PI/2,true),raised=this.sceneBounds(1,Math.PI/4,34*Math.PI/180,true);
+    const height2d=24+(flat.maxy-flat.miny)/(flat.maxx-flat.minx)*(width-(width<520?0:32)-4);
+    const natural3d=40+(raised.maxy-raised.miny)/(raised.maxx-raised.minx)*(width-40);
+    const height3d=Math.max(Math.min(natural3d,width*.72,620),Math.min(natural3d,240));
+    const height=lerp(height2d,height3d,eff);this.shell.style.height=height.toFixed(1)+'px';
+    const layout=$('scene-layout'),desktop=width>=560,corners=desktop&&eff>.5;
+    layout.classList.toggle('corner-layout',corners);
+    layout.style.setProperty('--big-size',Math.round(clamp(width*.058,30,56))+'px');
+    layout.style.setProperty('--row-factor',String(desktop?1-smoothstep(.05,.5,eff):1));
+    layout.style.setProperty('--stats-opacity',String(desktop?(corners?smoothstep(.5,.95,eff):1-smoothstep(.05,.45,eff)):1));
     const dpr=Math.min(window.devicePixelRatio||1,2);
     if(this.canvas.width!==Math.round(width*dpr)||this.canvas.height!==Math.round(height*dpr)){
       this.canvas.width=Math.round(width*dpr);this.canvas.height=Math.round(height*dpr);
@@ -269,7 +293,7 @@ class Skyline {
       const z0=0;let z=riseAt(t,w,this.weeks,dow)*barHeight(count,this.stats.maxCount);
       const selected=index===(this.hoverIndex>=0?this.hoverIndex:this.pinnedIndex>=0?this.pinnedIndex:this.focusedIndex);
       if(selected)z+=.7*eff;
-      const d=.405;
+      const d=lerp(.78,.9,eff)/2;
       const x0=w-d,x1=w+d,y0=dow-d,y1=dow+d;
       const B0=cam.project(x0,y0,z0),B1=cam.project(x1,y0,z0),B2=cam.project(x1,y1,z0),B3=cam.project(x0,y1,z0);
       const T0=cam.project(x0,y0,z),T1=cam.project(x1,y0,z),T2=cam.project(x1,y1,z),T3=cam.project(x0,y1,z);
@@ -289,17 +313,32 @@ class Skyline {
     }
     // 2D grid labels fade during the continuous camera tilt, never replace the canvas.
     const labelAlpha=1-clamp(eff*3,0,1);
+    const months=[];let previousMonth=-1;
+    for(let week=0;week<this.weeks;week++){
+      const date=plusDays(this.firstSunday,week*7),month=date.getUTCMonth();
+      if(month!==previousMonth)months.push({week,label:date.toLocaleDateString('en-US',{month:'short',timeZone:'UTC'})});
+      previousMonth=month;
+    }
+    if(months.length>1&&months[1].week-months[0].week<3)months.shift();
+    ctx.font='10px Arial,Helvetica,sans-serif';ctx.fillStyle=this.dark?'#919191':'#737373';
     if(labelAlpha>.002){
-      ctx.globalAlpha=labelAlpha;ctx.fillStyle=this.dark?'#909ba8':'#777';ctx.font='11px -apple-system,Segoe UI,Arial,sans-serif';
+      ctx.globalAlpha=labelAlpha;
       const labels=[['Mon',1],['Wed',3],['Fri',5]];
-      for(const [name,dow] of labels){const y=cam.project(0,dow,0)[1]+3.5; if(width>520)ctx.fillText(name,6,y);}
-      let prev=-1;
-      for(let w=0;w<this.weeks;w++){
-        const d=plusDays(this.firstSunday,w*7);
-        if(d.getUTCMonth()!==prev){prev=d.getUTCMonth();const x=cam.project(w,0,0)[0]-3;
-          if(w>=this.weeks-3||x>=width-45)break;
-          if(x>10)ctx.fillText(d.toLocaleDateString('en-US',{month:'short',timeZone:'UTC'}),x,18);
-        }
+      ctx.textAlign='right';ctx.textBaseline='middle';
+      for(const [name,dow] of labels){const [x,y]=cam.project(-.5,dow,0);if(width>=520)ctx.fillText(name,x-6,y);}
+      ctx.textAlign='left';ctx.textBaseline='bottom';let edge=-Infinity;
+      for(const month of months){
+        const [x,y]=cam.project(month.week-.39,-.7,0),labelWidth=ctx.measureText(month.label).width;
+        if(x>=edge&&x+labelWidth<=width){ctx.fillText(month.label,x,y-3);edge=x+labelWidth+6;}
+      }
+      ctx.globalAlpha=1;
+    }
+    const frontAlpha=smoothstep(.62,1,eff);
+    if(frontAlpha>.002){
+      ctx.globalAlpha=frontAlpha;ctx.textAlign='left';ctx.textBaseline='top';let edge=-Infinity;
+      for(const month of months){
+        const [x,y]=cam.project(month.week,6.8,0),labelWidth=ctx.measureText(month.label).width;
+        if(x>=edge&&x+labelWidth<=width){ctx.fillText(month.label,x,y+2);edge=x+labelWidth+10;}
       }
       ctx.globalAlpha=1;
     }
@@ -332,7 +371,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
       if(!response.ok)throw Error('Contribution data is not available yet');
       const data=validatePayload(await response.json());
       graph.setData(data.days,data.isDemo);
-      status.textContent=data.isDemo?'SAMPLE DATA · appearance preview only · not Title5656 activity':`@${data.username} · updated ${new Date(data.generatedAt).toLocaleString('en-GB',{timeZone:'UTC',dateStyle:'medium',timeStyle:'short'})} UTC`;
+      const scope=data.coverage?.includesAnonymizedPrivate?'public and anonymized private contributions':'GitHub contribution calendar';
+      status.textContent=data.isDemo?'SAMPLE DATA · appearance preview only · not Title5656 activity':`@${data.username} · ${scope} · updated ${new Date(data.generatedAt).toLocaleString('en-GB',{timeZone:'UTC',dateStyle:'medium',timeStyle:'short'})} UTC`;
     }
     document.documentElement.dataset.dataState='ready';controls.forEach(control=>control.disabled=false);
     $('empty-state').hidden=true;

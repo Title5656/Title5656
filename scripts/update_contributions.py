@@ -25,6 +25,8 @@ QUERY = '''query($login: String!) {
   user(login: $login) {
     login
     contributionsCollection {
+      restrictedContributionsCount
+      hasAnyRestrictedContributions
       contributionCalendar {
         totalContributions
         weeks {
@@ -36,7 +38,7 @@ QUERY = '''query($login: String!) {
 }'''
 
 
-def fetch_github(login, token):
+def fetch_github(login, token, *, coverage=None):
     body = json.dumps({'query': QUERY, 'variables': {'login': login}}).encode('utf-8')
     req = urllib.request.Request(
         'https://api.github.com/graphql', data=body,
@@ -60,7 +62,8 @@ def fetch_github(login, token):
         raise RuntimeError(f'Could not locate GitHub user {login!r}')
     if user.get('login', '').casefold() != login.casefold():
         raise RuntimeError('GitHub returned a different account')
-    calendar = user['contributionsCollection']['contributionCalendar']
+    collection = user['contributionsCollection']
+    calendar = collection['contributionCalendar']
     days = []
     for week in calendar['weeks']:
         for item in week['contributionDays']:
@@ -71,6 +74,11 @@ def fetch_github(login, token):
     days = normalize_days(days)
     if not days or sum(d['count'] for d in days) != calendar['totalContributions']:
         raise RuntimeError('GitHub calendar total does not match its daily counts')
+    # These counts are ALREADY in the calendar; adding them again would inflate totals.
+    if coverage is not None:
+        coverage.update({'anonymizedPrivateContributions': collection.get('restrictedContributionsCount',0),
+                         'includesAnonymizedPrivate': collection.get('hasAnyRestrictedContributions',False),
+                         'source': 'GitHub contributionCalendar'})
     return days
 
 
@@ -245,6 +253,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--demo', action='store_true', help='Generate screenshot-inspired sample, not real stats')
     a = p.parse_args()
+    coverage = {}
     if a.demo:
         data = json.loads((ROOT/'preview'/'sample-data.json').read_text(encoding='utf8'))
         days = data['days']
@@ -256,14 +265,14 @@ def main():
         token = os.environ.get('GITHUB_TOKEN')
         if not login or not token:
             p.error('Provide GITHUB_USERNAME and GITHUB_TOKEN (or run --demo)')
-        days = fetch_github(login, token)
+        days = fetch_github(login, token, coverage=coverage)
         outdata = ROOT/'contributions.json'
         outsvg = ROOT/'contribution-card.svg'
     if not days:
         raise RuntimeError('No contribution days received')
     stats = compute_stats(days)
     result = {'username': login, 'generatedAt': datetime.now(timezone.utc).isoformat(),
-              'isDemo': bool(a.demo), 'days': days, 'stats': stats}
+              'isDemo': bool(a.demo), 'days': days, 'stats': stats, 'coverage': coverage}
     outdata.write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n', encoding='utf8')
     outsvg.write_text(render_svg(days,stats,username=login,demo=a.demo),encoding='utf8')
     print(f'Wrote {outdata.relative_to(ROOT)} and {outsvg.relative_to(ROOT)} — {stats["total"]:,} contributions')

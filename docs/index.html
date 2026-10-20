@@ -8,13 +8,10 @@
 </head>
 <body>
 <main class="page">
-  <div class="page-heading"><a href="https://github.com/Title5656">Title5656 <span>↗</span></a><span>CONTRIBUTION SKYLINE</span></div>
-  <section class="card" aria-label="Contribution Skyline">
+  <section class="card" aria-label="Contribution Skyline" aria-describedby="data-status">
     <header class="header">
       <div class="header-title"><h1 id="card-title">Contribution Skyline</h1><span id="sample-tag" class="sample" hidden>SAMPLE DATA</span></div>
       <div class="toolbar">
-        <select id="palette" aria-label="Contribution palette"><option value="github">GitHub</option><option value="halloween">Halloween</option><option value="ocean">Ocean</option><option value="ember">Ember</option><option value="grape">Grape</option><option value="mono">Mono</option></select>
-        <button id="dark-btn" class="icon-btn" aria-label="Toggle dark mode" title="Toggle theme">◐</button>
         <button id="grid-btn" class="icon-btn active" aria-label="2D heatmap" aria-pressed="true" title="2D heatmap">
           <svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/></svg>
         </button>
@@ -23,24 +20,29 @@
         </button>
       </div>
     </header>
-    <p id="data-status" class="data-status" role="status">Loading contribution data…</p>
+    <p id="data-status" class="sr-only" role="status">Loading contribution data…</p>
     <section class="inner">
       <div id="empty-state" class="empty-state" hidden><strong>Waiting for contribution data</strong><span>Once the GitHub update succeeds, your skyline will appear here.</span><a href="?demo=1">View a labelled sample preview ↗</a></div>
+      <div class="scene-layout" id="scene-layout">
       <div class="scene-shell" id="scene-shell">
         <canvas id="skyline-canvas" tabindex="0" aria-label="Contribution graph. Use arrow keys for dates. Click 3D skyline to switch the view; drag to orbit." role="img"></canvas>
         <div id="tooltip" class="tooltip" role="tooltip"></div>
       </div>
       <div class="stats">
-        <div><div class="stat-label">1 year total</div><div class="stat-main"><strong id="total">—</strong><span>contributions</span></div><div id="period" class="stat-sub">—</div></div>
-        <div><div class="stat-label">Busiest day</div><div class="stat-main"><strong id="busiest">—</strong><span>contributions</span></div><div id="busiest-date" class="stat-sub">—</div></div>
-        <div><div class="stat-label">Longest streak</div><div class="stat-main"><strong id="longest">—</strong><span>days</span></div><div id="longest-range" class="stat-sub">—</div></div>
-        <div><div class="stat-label">Current streak</div><div class="stat-main"><strong id="current">—</strong><span>days</span></div><div id="current-range" class="stat-sub">—</div></div>
+        <div class="stat stat-total"><div class="stat-label">1 year total</div><div class="stat-main"><strong id="total">—</strong><span>contributions</span></div><div id="period" class="stat-sub">—</div></div>
+        <div class="stat stat-busiest"><div class="stat-label">Busiest day</div><div class="stat-main"><strong id="busiest">—</strong><span>contributions</span></div><div id="busiest-date" class="stat-sub">—</div></div>
+        <div class="stat stat-longest"><div class="stat-label">Longest streak</div><div class="stat-main"><strong id="longest">—</strong><span>days</span></div><div id="longest-range" class="stat-sub">—</div></div>
+        <div class="stat stat-current"><div class="stat-label">Current streak</div><div class="stat-main"><strong id="current">—</strong><span>days</span></div><div id="current-range" class="stat-sub">—</div></div>
+      </div>
       </div>
       <footer class="footer"><span id="help">Hover a day · arrow keys to explore</span><div class="legend"><span>Less</span><div id="legend" class="legend-colors"></div><span>More</span></div></footer>
     </section>
     <p class="sr-only" aria-live="polite" id="live"></p>
   </section>
-  <p class="note">One year. A different perspective.<br>Drag in 3D · select a day for details · use arrow keys to explore</p>
+  <details class="preferences"><summary>Appearance</summary><div class="toolbar">
+    <select id="palette" aria-label="Contribution palette"><option value="github">GitHub</option><option value="halloween">Halloween</option><option value="ocean">Ocean</option><option value="ember">Ember</option><option value="grape">Grape</option><option value="mono">Mono</option></select>
+    <button id="dark-btn" class="icon-btn" aria-label="Toggle dark mode" title="Toggle theme">◐</button>
+  </div></details>
   <noscript>This interactive skyline requires JavaScript. <a href="https://github.com/Title5656/Title5656/blob/main/contribution-skyline-3d.png">View the generated still image</a>.</noscript>
 </main>
 <script src="./skyline.js" defer></script>

@@ -8,7 +8,7 @@ const ROOT=path.resolve(__dirname,'..');
 const OUT=process.env.SKYLINE_EVIDENCE || path.join(ROOT,'test-results');
 const CHANNEL=process.env.SKYLINE_BROWSER_CHANNEL;
 fs.mkdirSync(OUT,{recursive:true});
-const sample=JSON.parse(fs.readFileSync(path.join(ROOT,'preview/contributions-demo.json'),'utf8'));
+const sample=JSON.parse(fs.readFileSync(path.join(ROOT,'tests/fixtures/demo.json'),'utf8'));
 let servedData=null;
 const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
@@ -40,19 +40,70 @@ async function frame(page,t){await page.evaluate(t=>{const g=window.__skyline;if
       assert.equal(await page.locator('#sample-tag').isVisible(),true);
       assert.equal(await page.locator('#total').textContent(),'1,720');
     });
+    await check('2D follows the compact original card and four statistics below',async()=>{
+      await page.setViewportSize({width:1020,height:1000});await frame(page,0);
+      const layout=await page.evaluate(()=>{
+        const card=document.querySelector('.card').getBoundingClientRect(),canvas=document.querySelector('canvas').getBoundingClientRect();
+        const blocks=[...document.querySelectorAll('.stats > div')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,bottom:r.bottom};});
+        return {height:card.height,canvasBottom:canvas.bottom,blocks};
+      });
+      assert.equal(layout.blocks.length,4);
+      assert.ok(layout.height<390,'2D card should not reserve the 3D height');
+      assert.ok(layout.blocks.every(block=>block.y>=layout.canvasBottom));
+      assert.ok(layout.blocks.every(block=>Math.abs(block.y-layout.blocks[0].y)<2));
+    });
+    await check('3D places totals upper right and streaks lower left',async()=>{
+      await frame(page,1);
+      const positions=await page.evaluate(()=>{
+        const stage=document.querySelector('.scene-shell').getBoundingClientRect();
+        return {stage:{x:stage.x,y:stage.y,width:stage.width,height:stage.height},stats:[...document.querySelectorAll('.stats > div')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,bottom:r.bottom};})};
+      });
+      assert.equal(positions.stats.length,4);
+      const {stage,stats}=positions;
+      assert.ok(stats[0].x>stage.x+stage.width*.55&&stats[0].y<stage.y+70);
+      assert.ok(stats[1].x>stage.x+stage.width*.55&&stats[1].y<stage.y+180);
+      assert.ok(stats[2].x<stage.x+40&&stats[2].y>stage.y+stage.height*.6);
+      assert.ok(stats[3].x<stage.x+40&&stats[3].bottom<=stage.y+stage.height+3);
+      assert.ok(stats[0].bottom<stats[1].y&&stats[2].bottom<stats[3].y);
+    });
     for(const [name,t] of [['2d',0],['mid-morph',0.5],['3d',1]]){
       await frame(page,t);
       await page.screenshot({path:path.join(OUT,'desktop-'+name+'.png'),fullPage:true});
+      await page.locator('.card').screenshot({path:path.join(OUT,'card-'+name+'.png')});
     }
     await check('3D painter order uses the actual yaw',async()=>{
       const result=await page.evaluate(()=>{const g=window.__skyline;return g.hitPolys.map(h=>{const c=g.cells[h.index];return (c.week+.5)*Math.sin(Math.PI/4)+(c.dow+.5)*Math.cos(Math.PI/4);});});
       assert.ok(result.every((n,i)=>i===0||n>=result[i-1]-1e-9),'bars must draw back to front');
+    });
+    await check('3D month labels follow the front edge inside the canvas',async()=>{
+      const labels=await page.evaluate(()=>{
+        const graph=window.__skyline,ctx=graph.ctx,draw=ctx.fillText,labels=[];
+        ctx.fillText=function(text,x,y){labels.push({text,x,y,alpha:this.globalAlpha});return draw.apply(this,arguments);};
+        try{graph.render(performance.now());}finally{ctx.fillText=draw;}
+        return {labels,height:graph.canvas.getBoundingClientRect().height};
+      });
+      assert.ok(labels.labels.filter(label=>label.alpha>.9).length>=10);
+      assert.ok(labels.labels.every(label=>label.y>=0&&label.y<labels.height));
     });
     await check('mobile and desktop labels fit',async()=>{
       for(const width of [1100,390,320]){
         await page.setViewportSize({width,height:900});await frame(page,1);
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
         await page.screenshot({path:path.join(OUT,width===1100?'desktop-fit.png':'mobile-'+width+'.png'),fullPage:true});
+      }
+    });
+    await check('stat text fits its own column on medium-width cards',async()=>{
+      for(const width of [761,800,850,640])for(const t of [0,1]){
+        await page.setViewportSize({width,height:1000});await frame(page,t);
+        const overflow=await page.evaluate(()=>[...document.querySelectorAll('.stats > div')].flatMap(stat=>{
+          const box=stat.getBoundingClientRect();
+          return [...stat.querySelectorAll('.stat-label,.stat-main,.stat-sub')].filter(el=>{
+            const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect();
+            return text.left<box.left-1||text.right>box.right+1;
+          }).map(el=>el.textContent);
+        }));
+        assert.deepEqual(overflow,[],`overflow at ${width}px, t=${t}`);
+        await page.locator('.card').screenshot({path:path.join(OUT,`card-${width}-${t===0?'2d':'3d'}.png`)});
       }
     });
     await page.setViewportSize({width:1100,height:900});await frame(page,1);
@@ -89,11 +140,13 @@ async function frame(page,t){await page.evaluate(t=>{const g=window.__skyline;if
       await page.waitForFunction(()=>window.__skyline.t===0);
     });
     await check('all palettes and dark theme render',async()=>{
+      await page.locator('.preferences summary').click();
       for(const palette of ['github','halloween','ocean','ember','grape','mono'])await page.selectOption('#palette',palette);
       await page.selectOption('#palette','github');await page.locator('#dark-btn').click();await frame(page,1);
       assert.equal(await page.getAttribute('html','data-theme'),'light');
       await page.locator('#dark-btn').click();await frame(page,1);
       await page.screenshot({path:path.join(OUT,'desktop-dark.png'),fullPage:true});
+      await page.locator('.preferences summary').click();
     });
     await check('reduced-motion toggles instantly including orbit',async()=>{
       await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await page.waitForFunction(()=>window.__skyline?.cells.length>0);
@@ -127,3 +180,4 @@ async function frame(page,t){await page.evaluate(t=>{const g=window.__skyline;if
     fs.writeFileSync(path.join(OUT,'browser-results.json'),JSON.stringify({checks,errors,browser:browser.version(),transport:'real local HTTP; fixture datasets; not GitHub production'},null,2));
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
+
