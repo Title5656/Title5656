@@ -13,12 +13,3 @@
 - 🌱 [Study Garden](https://github.com/Title5656/study-garden) — Interactive Thai exam preparation site with flashcards and quizzes
 - 🍣 [Sushiro Count](https://github.com/Title5656/sushiro-count) — A simple web app to count Sushiro plates, calculate total costs, and track your dining budget.
 
-### Languages
-
-<p>
-  <img src="https://skillicons.dev/icons?i=python,java,r,html,css" alt="Languages" />
-</p>
-
-`Python` `Java` `R` `HTML` `CSS`
-
-Currently learning more about `C` and `SQL`.
