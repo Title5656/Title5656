@@ -5,6 +5,8 @@
 
 </div>
 
+<img align="right" src="./assets/tiger-ascii.svg" width="250" height="260" alt="Tiger, a tabby cat sitting upright, drawn in ASCII art" />
+
 ### Projects
 
 - ⚡ [WattWise](https://github.com/Title5656/WattWise) — Household energy usage simulator
@@ -13,6 +15,8 @@
 - 🌱 [Study Garden](https://github.com/Title5656/study-garden) — Interactive Thai exam preparation site with flashcards and quizzes
 - 🍣 [Sushiro Count](https://github.com/Title5656/sushiro-count) — A simple web app to count Sushiro plates, calculate total costs, and track your dining budget.
 
+
+<br clear="right" />
 
 <!-- contribution-skyline:start -->
 ## My Contribution Skyline
