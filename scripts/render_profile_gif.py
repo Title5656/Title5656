@@ -26,6 +26,9 @@ FRAME_SIZE = (980, 780)
 # The visible image has constant dimensions while the Canvas inside it
 # genuinely morphs between 2D and 3D with the same world-space cuboids.
 FIXED_CARD_CSS = """
+:root[data-theme="dark"] {
+  --background: #0d1117;
+}
 html, body { width: 100%; height:auto; background:var(--background,#fff); }
 .page { margin:0; width:980px; height:780px; max-width:none; min-height:0; padding:0;
         display:flex; align-items:center; justify-content:center; }
@@ -130,7 +133,7 @@ def render(*, demo=False, quality=256, light=False):
     master_palette = swatches.quantize(colors=quality, method=Image.Quantize.MEDIANCUT)
     # Keep the exact UI colors so thin white/muted text survives GIF quantization.
     palette = master_palette.getpalette()
-    ui_colors = ['#0a0a0a','#fafafa','#a3a3a3','#262626','#39d353','#ffffff','#737373','#171717']
+    ui_colors = ['#0d1117','#fafafa','#a3a3a3','#262626','#39d353','#ffffff','#737373','#171717']
     for index,color in enumerate(ui_colors, start=quality-len(ui_colors)):
         palette[index*3:index*3+3] = [int(color[pos:pos+2],16) for pos in (1,3,5)]
     master_palette.putpalette(palette)
