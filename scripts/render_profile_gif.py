@@ -49,10 +49,10 @@ def load_html() -> str:
 def frames_for_loop():
     # Keep the existing morph frames and bar-rise wave unchanged.
     # 25 transition frames * 50ms = 1250ms in either direction.
-    # Hold each endpoint for 7 seconds; the full loop is 16.5 seconds.
-    seq = [(0.0, 7000)]
+    # Hold each endpoint for 5.5 seconds; the full loop is 13.5 seconds.
+    seq = [(0.0, 5500)]
     seq += [(i/26, 50) for i in range(1,26)]
-    seq += [(1.0, 7000)]
+    seq += [(1.0, 5500)]
     seq += [(i/26, 50) for i in range(25,0,-1)]
     return seq
 

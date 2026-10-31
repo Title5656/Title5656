@@ -14,17 +14,17 @@ spec.loader.exec_module(renderer)
 
 
 class TimingTests(unittest.TestCase):
-    def test_loop_holds_each_view_for_7_seconds(self):
+    def test_loop_holds_each_view_for_5_5_seconds(self):
         seq=renderer.frames_for_loop()
         peak=next(i for i,(t,_) in enumerate(seq) if t==1)
         forward=[round(t,6) for t,_ in seq[1:peak]]
         backward=[round(t,6) for t,_ in seq[peak+1:]]
         self.assertEqual(forward, list(reversed(backward)))
-        self.assertEqual(seq[0],(0.0,7000))
-        self.assertEqual(seq[peak],(1.0,7000))
+        self.assertEqual(seq[0],(0.0,5500))
+        self.assertEqual(seq[peak],(1.0,5500))
         self.assertEqual(seq[1:peak],[(i/26,50) for i in range(1,26)])
         self.assertEqual(seq[peak+1:],[(i/26,50) for i in range(25,0,-1)])
-        self.assertEqual(sum(ms for _,ms in seq),16500)
+        self.assertEqual(sum(ms for _,ms in seq),13500)
 
     def test_unverified_input_cannot_overwrite_existing_assets(self):
         base={'username':'Title5656','generatedAt':'2026-10-20T12:00:00Z','days':[{'date':'2026-10-20','count':3}],'stats':{'total':3}}
