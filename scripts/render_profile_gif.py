@@ -47,13 +47,12 @@ def load_html() -> str:
 
 
 def frames_for_loop():
-    # Uniform t sampling preserves the original 1300 ms easing curve and the
-    # left-to-right bar-rise wave. Endpoints are held to make loop readable.
-    # 26 * 50ms = 1300ms in either direction; GIF timings use 10ms units.
-    # Endpoint delays include their first 50ms transition interval.
-    seq = [(0.0, 1150)]
+    # Keep the existing morph frames and bar-rise wave unchanged.
+    # 25 transition frames * 50ms = 1250ms in either direction.
+    # Hold each endpoint for 7 seconds; the full loop is 16.5 seconds.
+    seq = [(0.0, 7000)]
     seq += [(i/26, 50) for i in range(1,26)]
-    seq += [(1.0, 2450)]
+    seq += [(1.0, 7000)]
     seq += [(i/26, 50) for i in range(25,0,-1)]
     return seq
 
@@ -155,3 +154,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
